@@ -24,39 +24,39 @@ jobs:
     - name: Push Image to Docker Hub
       run: docker push ashendiz/translator
 
-deploy:
-    needs: build-and-push
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+  deploy:
+      needs: build-and-push
+      if: github.ref == 'refs/heads/main'
+      runs-on: ubuntu-latest
 
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-north-1b
+      steps:
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: eu-north-1b
 
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            # Pull the latest Docker image
-            sudo docker pull ashendiz/translator
+        - name: Deploy to EC2
+          uses: appleboy/ssh-action@master
+          with:
+            host: ${{ secrets.EC2_HOST }}
+            username: ec2-user
+            key: ${{ secrets.EC2_SSH_KEY }}
+            script: |
+              # Pull the latest Docker image
+              sudo docker pull ashendiz/translator
 
-            # Stop the existing container if it's running
-            sudo docker stop translator || true
-            sudo docker rm translator || true
+              # Stop the existing container if it's running
+              sudo docker stop translator || true
+              sudo docker rm translator || true
 
-            # Run the new container
-            sudo docker run -d \
-              --name translator \
-              -p 3000:3000 \
-              -e NODE_ENV="production" \
-              $ashendiz/translator
+              # Run the new container
+              sudo docker run -d \
+                --name translator \
+                -p 3000:3000 \
+                -e NODE_ENV="production" \
+                $ashendiz/translator
 
-            # Clean up unused images
-            sudo docker system prune -f
+              # Clean up unused images
+              sudo docker system prune -f
